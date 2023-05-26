@@ -1,19 +1,23 @@
-import csv
-
 from sqlalchemy.orm import Session
 
-from src.model import Location
 from src import manager
+from src.schema import CreateGoodsSchema, Cars
 
 
-def upload_locations(db: Session):
-    locations = []
-    with open('uszips.csv', newline='') as csvfile:
-        reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
-        for row in reader:
-            items = ''.join(row).replace('"', '').split(",")
-            if items[0] == "zip":
-                continue
-            location = Location(zip=items[0], latitude=items[1], longitude=items[2], city=items[3])
-            locations.append(location)
-    manager.upload_locations(locations=locations, db=db)
+async def create_goods(goods: CreateGoodsSchema, db: Session):
+    await manager.create_goods(goods=goods, db=db)
+
+
+async def get_goods(goods_id: int, db: Session):
+    cars = [Cars(number="3453B", distance=10)] #TODO функция получения всех машин
+    return await manager.get_goods(goods_id=goods_id, cars=cars, db=db)
+
+
+async def get_all_goods(db: Session):
+    cars_amount = await get_cars_amount(db=db)
+    return await manager.get_all_goods(cars_amount=cars_amount, db=db)
+
+
+async def get_cars_amount(db: Session):
+    return 0 # TODO получение числа машин (расстояние <= 450)
+
