@@ -9,7 +9,7 @@ class LocationSchema(BaseModel):
     longitude: float
 
 
-class Cars(BaseModel):
+class CarsSchema(BaseModel):
     number: str
     distance: float
 
@@ -20,7 +20,7 @@ class OneGoodsSchema(BaseModel):
     description: str
     pickup_location: LocationSchema
     delivery_location: LocationSchema
-    cars: list[Cars]
+    cars: list[CarsSchema]
 
 
 class AllGoodsSchema(BaseModel):

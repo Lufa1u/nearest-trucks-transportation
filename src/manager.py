@@ -3,14 +3,15 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
 
-from src.model import Location, Goods
-from src.schema import CreateGoodsSchema, AllGoodsSchema, OneGoodsSchema, Cars
+from src.model import Location, Goods, Car
+from src.schema import CreateGoodsSchema, AllGoodsSchema, OneGoodsSchema, CarsSchema
 
 
 async def create_goods(goods: CreateGoodsSchema, db: Session):
+    if goods.weight > 1000:
+        raise HTTPException(status_code=422, detail="Weight can't be more than 1000.")
     if goods.pickup_zipcode == goods.delivery_zipcode:
         raise HTTPException(status_code=400, detail="Посылка для будущего тебя?)")
-
     locations = db.query(Location).filter(or_((Location.zip == goods.pickup_zipcode),
                                               (Location.zip == goods.delivery_zipcode))).all()
     if len(locations) < 2:
@@ -22,7 +23,15 @@ async def create_goods(goods: CreateGoodsSchema, db: Session):
     db.commit()
 
 
-async def get_goods(goods_id: int, cars: list[Cars], db: Session):
+async def delete_goods(goods_id: int, db: Session):
+    goods = db.query(Goods).filter(Goods.id == goods_id).first()
+    if not goods:
+        raise HTTPException(status_code=404, detail="Goods not found.")
+    db.delete(goods)
+    db.commit()
+
+
+async def get_goods(goods_id: int, cars: list[CarsSchema], db: Session):
     goods = db.query(Goods).filter(Goods.id == goods_id).first()
     if not goods:
         raise HTTPException(status_code=404, detail="Goods not found.")
@@ -41,3 +50,23 @@ async def get_all_goods(cars_amount: int, db: Session):
                                delivery_location=item.delivery_location.__dict__)
         result.append(goods)
     return result
+
+
+async def update_goods(goods_id: int, weight: int, description: str, db: Session):
+    if weight > 1000:
+        raise HTTPException(status_code=422, detail="Weight can't be more than 1000.")
+    goods = db.query(Goods).filter(Goods.id == goods_id).first()
+    if not goods:
+        raise HTTPException(status_code=404, detail="Goods not found.")
+    goods.weight = weight
+    goods.description = description
+    db.commit()
+
+
+async def update_car(car_id: int, zipcode: int, db: Session):
+    car = db.query(Car).filter(Car.id == car_id).first()
+    location = db.query(Location).filter(Location.zip == zipcode).first()
+    if not car or not location:
+        raise HTTPException(status_code=422, detail="Incorrect car_id or zipcode.")
+    car.location_id = location.id
+    db.commit()
