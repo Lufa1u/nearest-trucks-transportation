@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
 
 from src.model import Location, Goods, Car
-from src.schema import CreateGoodsSchema, AllGoodsSchema, OneGoodsSchema, CarsSchema
+from src.schema import CreateGoodsSchema
 
 
 async def create_goods(goods: CreateGoodsSchema, db: Session):
@@ -31,25 +31,25 @@ async def delete_goods(goods_id: int, db: Session):
     db.commit()
 
 
-async def get_goods(goods_id: int, cars: list[CarsSchema], db: Session):
-    goods = db.query(Goods).filter(Goods.id == goods_id).first()
+async def get_goods_location(pickup_location_id: int, db: Session):
+    return db.query(Location.latitude, Location.longitude).filter(Location.id == pickup_location_id).first()
+
+
+async def get_goods(goods_id: int, db: Session):
+    goods = db.query(Goods).add_columns(Location.latitude, Location.longitude).where(
+        Location.id == Goods.pickup_location_id or Location.id == Goods.delivery_location_id).filter(Goods.id == goods_id).first()
     if not goods:
         raise HTTPException(status_code=404, detail="Goods not found.")
-    return OneGoodsSchema(id=goods.id, weight=goods.weight, cars=cars,
-                          description=goods.description, pickup_location=goods.pickup_location.__dict__,
-                          delivery_location=goods.delivery_location.__dict__)
+    return goods
 
 
-async def get_all_goods(cars_amount: int, db: Session):
-    result = []
-    items = db.query(Goods).where(or_((Location.id == Goods.pickup_location_id),
-                                      (Location.id == Goods.delivery_location_id))).all()
-    for item in items:
-        goods = AllGoodsSchema(id=item.id, weight=item.weight, cars_amount=cars_amount,
-                               description=item.description, pickup_location=item.pickup_location.__dict__,
-                               delivery_location=item.delivery_location.__dict__)
-        result.append(goods)
-    return result
+async def get_all_goods(db: Session):
+    return db.query(Goods).add_columns(Location.latitude, Location.longitude).where(
+        Location.id == Goods.pickup_location_id or Location.id == Goods.delivery_location_id).all()
+
+
+async def get_all_cars(db: Session):
+    return db.query(Car.number).join(Location).add_columns(Location.latitude, Location.longitude).all()
 
 
 async def update_goods(goods_id: int, weight: int, description: str, db: Session):
