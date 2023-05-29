@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql import or_
 
 from src.model import Location, Goods, Car
@@ -37,19 +37,22 @@ async def get_goods_location(pickup_location_id: int, db: Session):
 
 async def get_goods(goods_id: int, db: Session):
     goods = db.query(Goods).add_columns(Location.latitude, Location.longitude).where(
-        Location.id == Goods.pickup_location_id or Location.id == Goods.delivery_location_id).filter(Goods.id == goods_id).first()
+        Location.id == Goods.pickup_location_id).filter(Goods.id == goods_id).first()
     if not goods:
         raise HTTPException(status_code=404, detail="Goods not found.")
     return goods
 
 
-async def get_all_goods(db: Session):
-    return db.query(Goods).add_columns(Location.latitude, Location.longitude).where(
-        Location.id == Goods.pickup_location_id or Location.id == Goods.delivery_location_id).all()
+async def get_all_goods(db: Session, weight_limit: int = None):
+    query = db.query(Goods).add_columns(Location.latitude, Location.longitude).where(
+        Location.id == Goods.pickup_location_id)
+    if weight_limit:
+        query = query.filter(Goods.weight <= weight_limit)
+    return query.all()
 
 
 async def get_all_cars(db: Session):
-    return db.query(Car.number).join(Location).add_columns(Location.latitude, Location.longitude).all()
+    return db.query(Car.number, Location.latitude, Location.longitude).join(Location).all()
 
 
 async def update_goods(goods_id: int, weight: int, description: str, db: Session):

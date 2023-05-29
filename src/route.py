@@ -29,6 +29,11 @@ async def get_all_goods(db: Session = Depends(get_db)):
     return await service.get_all_goods(db=db)
 
 
+@router.get(path="/get_goods_with_filters", response_model=list[AllGoodsSchema], status_code=200)
+async def get_goods_with_filters(weight_limit: int = None, distance_limit: int = None, db: Session = Depends(get_db)):
+    return await service.get_goods_with_filters(weight_limit=weight_limit, distance_limit=distance_limit, db=db)
+
+
 @router.patch(path="/update_goods", status_code=204)
 async def update_goods(goods_id: int, weight: int, description: str, db: Session = Depends(get_db)):
     await service.update_goods(goods_id=goods_id, weight=weight, description=description, db=db)

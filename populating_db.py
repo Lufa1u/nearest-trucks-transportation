@@ -12,7 +12,7 @@ from src.model import Location, Car
 def upload_random_cars(db: Session):
     min_id, max_id = list(db.query(func.min(Location.id), func.max(Location.id)).first())
     cars = []
-    for i in range(10):
+    for i in range(20):
         car = Car(
             number=f"{str(random.randint(1000, 9999))}{random.choice(string.ascii_uppercase)}",
             load_capacity=random.randint(1, 1000),
