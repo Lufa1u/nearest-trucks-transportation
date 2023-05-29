@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from sqlalchemy.orm import Session, Query
+from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
 
 from src.model import Location, Goods, Car
